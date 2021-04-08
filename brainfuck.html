@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>brainfuck</title>
+	<script>
+		var isInit = false;
+		var memory = [];
+		var pointer = 0;
+		var program = "";
+		var pc = 0;
+		var result = "";
+
+		var makeNum = function(n) {
+			if(n == null) {
+				n = 0;
+			}
+			n -= 0;
+			if(n > 1000) {
+				return n + "";
+			}
+			else {
+				return Math.floor(n/100) + "" + Math.floor((n / 10) % 10) + "" + Math.floor(n % 10);
+			}
+		};
+
+		var show = function() {
+			var s = "";
+			for(var i = 0; i < 3; i++) {
+				for(var j = 0; j < 10; j++) {
+					var index = i * 10 + j;
+					if(pointer == index) {
+						s += "<span style='background-color:red'>" + makeNum(memory[index]) + "</span>&nbsp;";
+					} else {
+						s += "<span>" + makeNum(memory[index]) + "</span>&nbsp;";
+					}
+				}
+				s += "<br>";
+			}
+			document.getElementById("memory").innerHTML = s;
+
+			s = "";
+			for(var i = 0; i < program.length; i++) {
+				if(i == pc) {
+					s += "<span style='background-color:#0f0'>" + program.substring(i, i + 1) + "</span>";
+				} else {
+					s += program.substring(i, i + 1);
+				}
+			}
+			document.getElementById("program").innerHTML = s;
+			document.getElementById("result").innerHTML = "result:<br>" + result;
+		};
+
+		var interpret = function(step) {
+			if(pc >= program.length) {
+				isInit = false;
+				return;
+			}
+			var c = program.substring(pc, pc + 1);
+			pc++;
+			switch(c) {
+				case '>': pointer++; break;
+				case '<': pointer--; break;
+				case '+': memory[pointer]++; break;
+				case '-': memory[pointer]--; break;
+				case '.': result += String.fromCharCode(memory[pointer]); break;
+				case '[':
+					if(memory[pointer] == 0) {
+						var staple = 0;
+						for(var i = pc; i < program.length; i++) {
+							if(program.substring(i, i + 1) == '[') {
+								staple++;
+							}
+							if(program.substring(i, i + 1) == ']') {
+								if(staple == 0) {
+									break;
+								}
+								staple--;
+							}
+						}
+						pc = i + 1;
+					}
+					break;
+				case ']':
+					if(memory[pointer] != 0) {
+						var staple = 0;
+						for(var i = pc - 2; i > 0; i--) {
+							if(program.substring(i, i + 1) == ']') {
+								staple++;
+							}
+							if(program.substring(i, i + 1) == '[') {
+								if(staple == 0) {
+									break;
+								}
+								staple--;
+							}
+						}
+						pc = i;
+					}
+					break;
+				case '#':
+					step = true;
+					break;
+			}
+			show();
+			if(!step) {
+				setTimeout(interpret, 0);
+			}
+		};
+
+		var init = function() {
+			memory = [];
+			for(var i = 0; i < 100; i++) {
+				memory[i] = 0;
+			}
+			pointer = 0;
+			program = document.getElementById("source").value;
+			pc = 0;
+			result = "";
+			isInit = true;
+			show();
+		};
+
+		onload = function() {
+			show();
+			// alert(makeNum(42));
+
+			document.getElementById("go").onclick = function() {
+				if(!isInit) {
+					init();
+				}
+				interpret();
+			};
+			document.getElementById("step").onclick = function() {
+				if(!isInit) {
+					init();
+				}
+				interpret(true);
+			};
+		};
+	</script>
+</head>
+<body>
+	<!--	<input type="text" id="source" size="80">-->
+	<textarea type="text" id="source" rows="20" cols="80"></textarea>
+	<input type="button" value="実行" id="go">
+	<input type="button" id="step" value="ステップ"><br>
+	<hr>
+	<div id="program"></div>
+	<div id="memory"></div>
+	<div id="result">result:<br></div>
+</body>
+</html>
